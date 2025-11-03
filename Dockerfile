@@ -16,20 +16,23 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Stage 2: Serve the application using a lightweight server
+# Stage 2: Serve the application using a Node.js server that can handle API routes
 FROM node:18-alpine
-
-# Install a simple static server
-RUN npm install -g serve
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the built application from the first stage
+# Copy package files and install production dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy the built application from the first stage and the server file
 COPY --from=build /app/dist ./dist
+COPY server.js ./
+COPY src/lib/nik_parse.js ./src/lib/nik_parse.js
 
 # Expose port 80
 EXPOSE 80
 
-# Serve the application
-CMD ["serve", "-s", "dist", "-l", "80"]
+# Serve the application with API support
+CMD ["node", "server.js"]
